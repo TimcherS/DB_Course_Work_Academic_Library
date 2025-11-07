@@ -21,7 +21,7 @@ JOIN authors ON author_book.author_id = authors.author_id
 WHERE authors.author_name = 'Джерард В.'
 EXCEPT 
 SELECT books.*
-FROM books WHERE release_date = '1700';
+FROM books WHERE release_date = 1700;
 
 
 
@@ -58,135 +58,64 @@ ALL (
 SELECT * FROM readers WHERE split_part(readers.FIO, ' ', 2) = ANY(SELECT 'Сергей' UNION SELECT 'Иван');
 
 
+-- Поиск количества каждой книги
+SELECT book_name, count(*) as book_count
+FROM books AS b
+JOIN book_items AS bi
+ON b.book_id = bi.book_id
+where bi.book_state = 'Доступна'
+group by b.book_name 
+
+
+--1
+SELECT 
+	book_name,
+	theme_name,
+	publisher_name,
+	release_date,
+	isbn,
+	select(*) as avaible_book_count
+FROM books as b
+JOIN publishers as p
+on b.publisher_id = p.publisher_id
+join themes as t
+on b.theme_id = t.theme_id
+JOIN book_items AS bi
+ON b.book_id = bi.book_id
+where book_name ilike $1
+and bi.book_state = 'Доступна'
+group by b.book_name;
+
 
 
 -- Регистрация книг (ОК)
-
 BEGIN;
-DO $$
-DECLARE 
-	v_BOOK_NAME text := 'Грузоподъемные машины';
-	v_ISBN text := '5-7038-1516-9';
-	v_RELEASE_YEAR int := 2000;
-	v_NUMBER_OF_BOOKS int := 5;
-
-	v_AUTHOR_NAME text := 'Александров М.П.';
-	v_PUBLISHER_NAME text := 'МГТУ им. Н.Э. Баумана';
-	v_THEME text := 'Техника';
-	v_ACQUISITION_DATE date := '2025-10-27';
-	
-	
-	v_publisher_id int;
-	v_theme_id int;
-	v_author_id int;
-	v_book_id int;
-	
-	v_book_found int;
-BEGIN
-	INSERT INTO authors(author_name)
-	SELECT v_AUTHOR_NAME
-	WHERE NOT EXISTS (SELECT 1 FROM authors WHERE authors.author_name = v_AUTHOR_NAME);
-	
-	
-	INSERT INTO publishers(publisher_name)
-	SELECT v_PUBLISHER_NAME
-	WHERE NOT EXISTS (SELECT 1 FROM publishers WHERE publishers.publisher_name = v_PUBLISHER_NAME);
-	
-	
-	INSERT INTO themes(theme_name)
-	SELECT v_THEME
-	WHERE NOT EXISTS (SELECT 1 FROM themes WHERE themes.theme_name = v_THEME);
-	
-	
-	SELECT publisher_id INTO v_publisher_id FROM publishers WHERE publishers.publisher_name = v_PUBLISHER_NAME;
-	SELECT theme_id INTO v_theme_id FROM themes WHERE themes.theme_name = v_THEME;
-	
-	
-	INSERT INTO books (book_name, publisher_id, isbn, release_date, theme_id) 
-	SELECT v_BOOK_NAME, v_publisher_id, v_ISBN, v_RELEASE_YEAR, v_theme_id
-	WHERE NOT EXISTS(SELECT 1 FROM books WHERE isbn = v_ISBN);
-	
-	
-	INSERT book_items(book_id, acquisition_date)
-	select book_id, v_ACQUISITION_DATE
-	FROM books AS b WHERE v_BOOK_NAME = b.book_name
-	cross join lateral generate_series(1, v_NUMBER_OF_BOOKS);
-
-
-	SELECT author_id INTO v_author_id FROM authors WHERE author_name = v_AUTHOR_NAME;
-	SELECT book_id INTO v_book_id FROM books WHERE isbn = v_ISBN;
-	
-	
-	INSERT INTO author_book (author_id, book_id)
-	SELECT v_author_id, v_book_id;
-	
-
+do $$
+begin 
+	perform register_book(
+		'Грузоподъемные машины'::text, 
+		'Александров М.П.'::text, 
+		'МГТУ им. Н.Э. Баумана'::text,
+		'5-7038-1516-9'::text,
+		2000::smallint, 
+		'Техника'::text,
+		5::smallint, 
+		'2025-10-27'::date);
 END;
 $$ language plpgsql;
-
 COMMIT;
 
 
 
 
-
--- Выдача/получение книг с проверкой возможности (ОК)
-BEGIN; 
-DO $$
-DECLARE 
-	v_READER_FIO text := 'Лукин Владимир Николаевич';
-	v_BOOK_TO_LOAN text := 'Дифференциальные уравнения';
-
-	v_book_id int;
-	v_book_item_id int;
-	v_reader_id int;
-	
-	v_LOAN_DATE date := '2025-10-21';
-	v_LOAN_DUE_DATE date := '2025-10-28';
-	
-BEGIN
-
-	SELECT reader_id INTO v_reader_id FROM readers WHERE FIO = v_READER_FIO;
-	IF NOT FOUND THEN 
-		raise EXCEPTION 'Читатель "%" не найден!', v_READER_FIO;
-	END IF;
-	
-	
-	SELECT book_id INTO v_book_id FROM books WHERE book_name = v_BOOK_TO_LOAN;
-	IF NOT FOUND THEN
-		raise EXCEPTION 'Книги "%" в библиотеке нет!', v_BOOK_TO_LOAN;
-	END IF;
-	
-	
-	SELECT book_item_id INTO v_book_item_id 
-	FROM book_items 
-	JOIN books
-	ON book_items.book_id = books.book_id
-	WHERE book_items.book_status = 'Доступна'
-	AND books.book_name = v_BOOK_TO_LOAN
-	LIMIT 1
-	FOR UPDATE;
-	
-	
-	IF NOT FOUND THEN
-		raise EXCEPTION 'Все экземлпяры книги "%" разданы!', v_BOOK_TO_LOAN;
-	ELSE 
-		INSERT INTO book_loans (loan_date, loan_due_date, book_item_id, reader_id)
-		SELECT v_LOAN_DATE, v_LOAN_DUE_DATE, v_book_item_id, v_reader_id;
-	
-	
-		UPDATE book_items SET book_status = 'Займ'
-		WHERE book_item_id = v_book_item_id;
-
-		
-	END IF;
-	
-	
-END;
+begin;
+do $$
+begin
+	perform loan_book('Лукин Владимир Николаевич'::text, 'Дифференциальные уравнения'::text, '2025-10-21'::date, '2025-10-28'::date);
+end;
 $$ language plpgsql;
-	
-	
-COMMIT;
+
+commit;
 
 -- Проверка получения Лукиным книги (ОК)
 SELECT *
@@ -198,56 +127,15 @@ WHERE r.FIO = 'Лукин Владимир Николаевич' AND bl.loan_dat
 
 
 
-
--- Возврат книг (ОК)
-BEGIN;
-
-DO $$
-DECLARE 
-	v_READER_FIO text := 'Лукин Владимир Николаевич';
-	v_BOOK_TO_LOAN text := 'Дифференциальные уравнения';
-
-	v_book_item_id int := 123;
-BEGIN 
-	
-	
-	SELECT * FROM book_items AS bi
-	JOIN book_loans AS bl ON bi.book_item_id = bl.book_item_id
-	JOIN readers AS r ON bl.reader_id = r.reader_id
-	WHERE r.FIO = v_READER_FIO
-	AND bi.book_item_id = v_book_item_id
-	AND bi.book_status = 'Займ';
-	
-	
-	IF FOUND
-	THEN 
-		UPDATE book_items SET book_status = 'Доступна'
-		WHERE book_item_id = v_book_item_id;
-	
-		UPDATE book_loans SET loan_return_date = current_date 
-		WHERE book_item_id = v_book_item_id AND loan_return_date = null;
-
-		
-	ELSE 
-		SELECT * FROM book_items AS bi
-		JOIN book_loans AS bl ON bi.book_item_id = bl.book_item_id
-		JOIN readers AS r ON bl.reader_id = r.reader_id
-		WHERE r.FIO = v_READER_FIO
-		AND bi.book_item_id = v_book_item_id
-		AND bi.book_status = 'Списана' OR bi.book_status = 'Утеряна';
-	
-		IF FOUND 
-			raise EXCEPTION 'Книга уже была возвращена или она была утеряна/списана библиотекой!', v_BOOK_TO_LOAN;
-		END IF;
-	
-		
-	END IF;
-
-END;
+-- Лукин вернул книги
+begin;
+do $$
+begin
+	perform return book('Лукин Владимир Николаевич', '')
+end;
 $$ language plpgsql;
+commit;
 
-
-COMMIT;
 
 
 -- Деление на русские и советские книги (ОК)
@@ -277,13 +165,14 @@ DO $$
 
 BEGIN
 	UPDATE book_items
-	SET book_status = 'Списана'
+	SET book_state = 'Списана'
 	WHERE book_item_id IN 
 	(
 		SELECT book_items.book_item_id
-		FROM books
-		JOIN book_items ON books.book_id = book_items.book_id
-		WHERE books.release_date < 1800;
+		FROM books AS b
+		JOIN book_items AS bi ON b.book_id = bi.book_id
+		WHERE b.release_date < 1800
+		AND bi.book_state = 'Доступна';
 	);
 	
 END;

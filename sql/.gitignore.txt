@@ -1,0 +1,5 @@
+.idea/
+server/
+scheme2.sql
+Script.sql
+.gitignore

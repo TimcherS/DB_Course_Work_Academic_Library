@@ -1,26 +1,39 @@
 BEGIN;
 
+drop table if exists temp_books;
+drop table if exists temp_book_loans;
+drop table if exists temp_readers;
 
-INSERT INTO themes (theme_name) VALUES 
-('Математика'), 
-('Юриспруденция'), 
-('Экология'), 
-('Этнология'), 
-('Техника'), 
-('История'), 
-('Механика'), 
-('Психология'), 
-('Экономика'), 
-('Социология'), 
-('Иностранные языки'), 
-('Материаловедение'), 
-('Информационные технологии'), 
-('Химия'), 
-('Художественная литература'), 
-('Металлургия');
+create temporary TABLE temp_books (
+    id SERIAL PRIMARY KEY,
+    book_name TEXT,
+    authors_list TEXT,
+    publisher_name TEXT,
+    isbn TEXT,
+    release_date smallint,
+    theme_name text,
+    number_of_books smallint,
+    acquisition_date date default current_date
+);
 
 
-INSERT INTO temp_raw_books (book_name, authors_list, publisher_name, isbn, release_date, theme_name, number_of_books, acquisition_date) VALUES
+CREATE temporary TABLE temp_book_loans (
+	id serial PRIMARY KEY,
+	loan_date date,
+	FIO text,
+	book_name text
+);
+
+
+create temporary table temp_readers (
+	id serial primary key,
+	FIO text,
+	Dolzhnost text,
+	Uchenaya_Stepen text
+);
+
+
+INSERT INTO temp_books (book_name, authors_list, publisher_name, isbn, release_date, theme_name, number_of_books, acquisition_date) VALUES
 ('Дифференциальные уравнения', 'Агафонов С.А., Герман А.Д., Муратова Т.В.', 'МГТУ им. Н.Э. Баумана', '5-7038-1649-1', 2000, 'Математика', 45, '2001-09-15'),
 ('Криминалистика', 'Адамова В.А., Голдованский Ю.П., Лазари А.С.', 'Юридическая литература', '5-7357-0056-1', 1993, 'Юриспруденция', 30, '1994-02-10'),
 ('Экология.Человек-Экономика-Биота-Среда', 'Акимова Т.А., Хаскин В.В.', 'ЮНИТИ', '5-238-00190-8', 2001, 'Экология', 20, '2001-11-05'),
@@ -62,60 +75,6 @@ INSERT INTO temp_raw_books (book_name, authors_list, publisher_name, isbn, relea
 ('Введение в электронную теорию органических реакций', 'Беккер Г.', 'Мир', NULL, 1965, 'Химия', 5, '1966-08-22'),
 ('Структура и свойства термической обработки стали', NULL, 'Машгиз', NULL, 1951, 'Металлургия', 1, '1955-07-19');
 
-INSERT INTO publishers(publisher_name) 
-SELECT DISTINCT publisher_name FROM temp_raw_books WHERE publisher_name IS NOT NULL;
-
-
-INSERT INTO authors(author_name)
-SELECT DISTINCT 
-    TRIM(author_name)
-FROM 
-    temp_raw_books
-    CROSS JOIN LATERAL 
-    unnest(string_to_array(authors_list, ',')) AS author_name
-WHERE
-    authors_list IS NOT NULL
-    AND TRIM(author_name) <> '';
-
-
-INSERT INTO books(book_name, publisher_id, isbn, release_date, theme_id) 
-SELECT book_name, publisher_id, isbn, release_date, theme_id
-FROM temp_raw_books AS b
-LEFT JOIN publishers AS p ON b.publisher_name = p.publisher_name
-left JOIN themes AS t ON b.theme_name = t.theme_name; 
-
-insert into book_items(book_id, acquisition_date)
-select book_id, acquisition_date
-from temp_raw_books as trb
-join books as b
-	on trb.book_name = b.book_name
-cross join lateral generate_series(1, trb.number_of_books);
-
-
-INSERT INTO author_book(book_id, author_id)
-select DISTINCT
-    b.book_id,
-    a.author_id
-FROM
-    temp_raw_books AS trb
-JOIN
-    books AS b ON trb.book_name = b.book_name
-    AND trb.release_date IS NOT DISTINCT FROM b.release_date
-JOIN 
-	publishers AS p ON b.publisher_id = p.publisher_id AND trb.publisher_name IS NOT DISTINCT FROM p.publisher_name
-CROSS JOIN LATERAL
-    unnest(string_to_array(authors_list, ',')) AS parsed_author_name
-JOIN
-    authors AS a ON TRIM(a.author_name) = TRIM(parsed_author_name)
-WHERE
-    trb.authors_list IS NOT NULL
-	AND TRIM(parsed_author_name) <> '';
-
-
-
-
-
-
 
 INSERT INTO readers (FIO, Dolzhnost, Uchenaya_Stepen) VALUES
 ('Карташов Эдуард Михайлович', 'профессор', 'Доктор физико-математических наук'),
@@ -140,7 +99,7 @@ INSERT INTO readers (FIO, Dolzhnost, Uchenaya_Stepen) VALUES
 ('Беляков Дмитрий Валерьевич', 'доцент', 'Кандидат технических наук');
 
 
-INSERT INTO temp_book_loans_raw (loan_date, FIO, book_name) VALUES
+INSERT INTO temp_book_loans (loan_date, FIO, book_name) VALUES
 ('2024-01-10', 'Карташов Эдуард Михайлович', 'Дифференциальные уравнения'),
 ('2024-01-10', 'Карташов Эдуард Михайлович', 'Лекции по теоретической механике. Динамика. Аналитическая механика'),
 ('2024-04-01', 'Карташов Эдуард Михайлович', 'Криминалистика'),
@@ -182,21 +141,44 @@ INSERT INTO temp_book_loans_raw (loan_date, FIO, book_name) VALUES
 ('2024-02-25', 'Чернова Татьяна Александровна', 'История России: Новейшее время 1945-1999');
 
 
-INSERT INTO book_loans(loan_date, loan_due_date, book_item_id, reader_id) 
-SELECT
-	loan_date,
-	loan_date + INTERVAL '90 days',
-    bi.book_item_id,
-    r.reader_id
-FROM
-    temp_book_loans_raw AS tblr
-JOIN
-    books AS b ON tblr.book_name = b.book_name
-join 
-	book_items as bi on b.book_id = bi.book_id
-JOIN
-    readers AS r ON TRIM(r.FIO) = TRIM(tblr.FIO)
-limit 1;
+
+do $$
+declare
+	v_book record;
+begin
+	for v_book in select * from temp_books
+	loop
+		perform register_book(v_book.book_name, v_book.authors_list, v_book.publisher_name, v_book.isbn, v_book.release_date, v_book.theme_name, v_book.number_of_books, v_book.acquisition_date);
+	end loop;
+end;
+$$ language plpgsql;
+
+
+do $$
+declare
+	v_reader record;
+begin
+	for v_reader in select * from temp_readers
+	loop
+		perform register_reader(v_reader.FIO, v_reader.Dolzhnost, v_reader.Uchenaya_Stepen);
+	end loop;
+end;
+$$ language plpgsql;
+
+
+
+
+do $$
+declare
+	v_LOAN_ITER record;
+begin
+	for v_LOAN_ITER in select FIO, book_name, loan_date from temp_book_loans
+	loop
+		perform loan_book(v_LOAN_ITER.FIO, v_LOAN_ITER.book_name, v_LOAN_ITER.loan_date, (v_LOAN_ITER.loan_date + INTERVAL '90 days')::date);
+	end loop;
+end;
+$$ language plpgsql;
+
 
 
 

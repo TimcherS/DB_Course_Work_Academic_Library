@@ -4,7 +4,7 @@
 
 Создайте базу данных "academic_library", а затем создайте таблицы и заполните их данными с помощью этих команд:
 ```
-psql -U postgres -d academic_library -f sql/schema.sql
+psql -U postgres -d academic_library -f sql/scheme.sql
 psql -U postgres -d academic_library -f sql/seed.sql
 ```
 
@@ -30,5 +30,6 @@ pip install -r requirements.txt
 
 Запустите проект:
 ```
-streamlit run src/main.py
+cd server
+fastapi dev main.py
 ```

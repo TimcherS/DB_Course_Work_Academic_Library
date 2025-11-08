@@ -1,4 +1,6 @@
-streamlit
-psycopg2-binary
+fastapi[standard]
+Jinja2
+asyncpg
 python-dotenv
 SQLAlchemy
+psycopg2-binary

@@ -1,101 +1,80 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
     <title>Книги - Библиотека МАИ</title>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link rel="stylesheet" href="/static/css/main.css">
     <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
 </head>
 
-<body class="bg-gray-900">
+<body class="mai-bg">
 {% include 'header.html' %}
 
 <div class="min-h-screen">
-    <div class="relative overflow-x-auto shadow-md sm:rounded-lg mx-20">
-        <!-- Header with actions and search -->
-        <div class="p-3 flex items-center justify-between bg-white dark:bg-gray-800">
-            <!-- Action dropdown -->
+    <div class="border-custom rounded-table mx-20 mt-4">
+        <!-- UPHEADER -->
+        <div class="p-4 flex items-center justify-between border-b border-custom mai-transition">
+            <!-- Add book button -->
             <div>
-                <button id="dropdownActionButton" data-dropdown-toggle="dropdownAction" class="inline-flex items-center text-gray-500 bg-white border border-gray-300 focus:outline-none hover:bg-gray-100 focus:ring-4 focus:ring-gray-100 font-medium rounded-lg text-sm px-3 py-1 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:bg-gray-700 dark:hover:border-gray-600 dark:focus:ring-gray-700" type="button">
-                    Действия
-                    <svg class="w-2.5 h-2.5 ms-2.5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 10 6">
-                        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 4 4 4-4"/>
-                    </svg>
+                <button type="button" onclick="openAddBookModal()" class="mai-btn inline-flex items-center">
+                    Зарегистрировать книгу
                 </button>
-                <!-- Dropdown menu -->
-                <div id="dropdownAction" class="z-10 hidden bg-white divide-y divide-gray-100 rounded-lg shadow-sm w-44 dark:bg-gray-700 dark:divide-gray-600">
-                    <ul class="py-1 text-sm text-gray-700 dark:text-gray-200" aria-labelledby="dropdownActionButton">
-                        <li>
-                            <a href="#" class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">Наградить</a>
-                        </li>
-                        <li>
-                            <a href="#" class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">Продвинуть</a>
-                        </li>
-                        <li>
-                            <a href="#" class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">Активировать аккаунт</a>
-                        </li>
-                    </ul>
-                    <div class="py-1">
-                        <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 dark:text-gray-200 dark:hover:text-white">Удалить пользователя</a>
-                    </div>
-                </div>
             </div>
-
             <!-- Search form -->
             <div class="relative">
                 <div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
-                    <svg class="w-4 h-4 text-gray-500 dark:text-gray-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 20">
+                    <svg class="w-4 h-4 text-gray-500" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 20">
                         <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m19 19-4-4m0-7A7 7 0 1 1 1 8a7 7 0 0 1 14 0Z"/>
                     </svg>
                 </div>
-                <form action="/" method="get">
-                    <input id="searchInput" name="search" type="text" value="{{ search }}" class="block py-1.5 ps-10 text-sm text-gray-900 border border-gray-300 rounded-lg w-80 bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="Поиск книг">
+                <form action="/books" method="get">
+                    <input id="searchInput" name="search" type="text" value="{{ search }}" class="block py-1.5 ps-10 text-sm border border-gray-300 rounded-lg w-80 bg-gray-50" placeholder="Поиск книг">
                 </form>
             </div>
         </div>
 
         <!-- Books table -->
-        <table class="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400">
-            <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
-                <tr>
-                    <th scope="col" class="p-3">
-                        <div class="flex items-center">
-                            <input id="checkbox-all-search" type="checkbox" class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded-sm focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 dark:focus:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600">
-                            <label for="checkbox-all-search" class="sr-only">checkbox</label>
-                        </div>
-                    </th>
-                    <th scope="col" class="px-6 py-3">Название</th>
-                    <th scope="col" class="px-6 py-3">Тема</th>
-                    <th scope="col" class="px-6 py-3">Издатель</th>
-                    <th scope="col" class="px-6 py-3">Дата выпуска</th>
-                    <th scope="col" class="px-6 py-3">ISBN</th>
-                    <th scope="col" class="px-6 py-3">Статус</th>
+        <table class="w-full">
+            <!-- table header -->
+            <thead>
+                <tr class="mai-table-header border-custom">
+                    <th class="px-6 py-4 border-custom">№</th>
+                    <th class="px-6 py-4 border-custom">Название</th>
+                    <th class="px-6 py-4 border-custom">Тема</th>
+                    <th class="px-6 py-4 border-custom">Издатель</th>
+                    <th class="px-6 py-4 border-custom">Дата выпуска</th>
+                    <th class="px-6 py-4 border-custom">ISBN</th>
+                    <th class="px-6 py-4 border-custom">Статус</th>
                 </tr>
             </thead>
+            <!-- table rows -->
             <tbody id="book_rows">
                 {% for book in books %}
-                <tr class="bg-white border-b dark:bg-gray-800 dark:border-gray-700 border-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600">
-                    <td class="w-4 p-3">
+                <tr class="mai-table-row context-menu-trigger border-custom"
+                    data-book-id="{{ book.id }}" 
+                    data-book-name="{{ book.name }}">
+                    <td class="px-6 py-4 border-custom text-center">{{ loop.index }}</td>
+                    <td class="px-6 py-4 border-custom">{{ book.name }}</td>
+                    <td class="px-6 py-4 border-custom">{{ book.theme }}</td>
+                    <td class="px-6 py-4 border-custom">{{ book.publisher }}</td>
+                    <td class="px-6 py-4 border-custom">{{ book.release_date }}</td>
+                    <td class="px-6 py-4 border-custom">{{ book.isbn }}</td>
+                    <td class="px-6 py-4 border-custom">
+                        {% if book.available_book_count > 10 %}
                         <div class="flex items-center">
-                            <input id="checkbox-table-search-{{ loop.index }}" type="checkbox" class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded-sm focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 dark:focus:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600">
-                            <label for="checkbox-table-search-{{ loop.index }}" class="sr-only">checkbox</label>
+                            <div class="mai-status-dot mai-status-dot-available"></div>
+                            <span class="mai-status-available">Доступны ({{ book.available_book_count }}шт.)</span>
                         </div>
-                    </td>
-                    <td class="px-6 py-4 book-name-cell">{{ book.name }}</td>
-                    <td class="px-6 py-4">{{ book.theme }}</td>
-                    <td class="px-6 py-4">{{ book.publisher }}</td>
-                    <td class="px-6 py-4">{{ book.release_date }}</td>
-                    <td class="px-6 py-4">{{ book.isbn }}</td>
-                    <td class="px-6 py-4">
-                        {% if book.available_book_count > 0 %}
+                        {% elif book.available_book_count > 0 %}
                         <div class="flex items-center">
-                            <div class="h-2.5 w-2.5 rounded-full bg-green-500 me-2"></div>
-                            Доступны ({{ book.available_book_count }}шт.)
+                            <div class="mai-status-dot mai-status-dot-warning"></div>
+                            <span class="mai-status-warning">Доступны ({{ book.available_book_count }}шт.)</span>
                         </div>
                         {% else %}
                         <div class="flex items-center">
-                            <div class="h-2.5 w-2.5 rounded-full bg-yellow-500 me-2"></div>
-                            Нет в наличии
+                            <div class="mai-status-dot mai-status-dot-unavailable"></div>
+                            <span class="mai-status-unavailable">Нет в наличии</span>
                         </div>
                         {% endif %}
                     </td>
@@ -106,8 +85,94 @@
     </div>
 </div>
 
-<script src="static/js/search.js"></script>
+<!-- Модальное окно добавления книги -->
+<div id="addBookModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
+    <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+        <div class="mt-3">
+            <h3 class="text-lg font-medium text-gray-900 mb-4">Добавить новую книгу</h3>
+            
+            <form id="addBookForm" onsubmit="addBook(event)">
+                <div class="mb-4">
+                    <label for="book_name" class="block text-sm font-medium text-gray-700 mb-1">
+                        Название книги *
+                    </label>
+                    <input type="text" id="book_name" name="book_name" required
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
 
+                <div class="mb-4">
+                    <label for="authors" class="block text-sm font-medium text-gray-700 mb-1">
+                        Авторы (через запятую)
+                    </label>
+                    <input type="text" id="authors" name="authors"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                           placeholder="Иван Иванов, Петр Петров">
+                </div>
+
+                <div class="mb-4">
+                    <label for="publisher" class="block text-sm font-medium text-gray-700 mb-1">
+                        Издатель
+                    </label>
+                    <input type="text" id="publisher" name="publisher"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+
+                <div class="mb-4">
+                    <label for="isbn" class="block text-sm font-medium text-gray-700 mb-1">
+                        ISBN
+                    </label>
+                    <input type="text" id="isbn" name="isbn"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+
+                <div class="mb-4">
+                    <label for="release_date" class="block text-sm font-medium text-gray-700 mb-1">
+                        Год выпуска
+                    </label>
+                    <input type="number" id="release_date" name="release_date" min="1900" max="2030"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+
+                <div class="mb-4">
+                    <label for="theme" class="block text-sm font-medium text-gray-700 mb-1">
+                        Тема
+                    </label>
+                    <input type="text" id="theme" name="theme"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+
+                <div class="mb-4">
+                    <label for="number_of_books" class="block text-sm font-medium text-gray-700 mb-1">
+                        Количество экземпляров
+                    </label>
+                    <input type="number" id="number_of_books" name="number_of_books" value="1" min="1"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+
+                <div class="flex items-center justify-end gap-3 mt-6">
+                    <button type="button" onclick="closeAddBookModal()" 
+                            class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500">
+                        Отмена
+                    </button>
+                    <button type="submit" 
+                            class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        Добавить книгу
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Контекстное меню -->
+<div id="contextMenu" class="mai-context-menu">
+    <button onclick="editBook()">Редактировать</button>
+    <button onclick="deleteBook()">Удалить</button>
+    <button onclick="loanBook()">Выдать книгу</button>
+</div>
+
+<script src="static/js/books.js"></script>
+<script src="static/js/search.js"></script>
 {% include 'footer.html' %}
 </body>
 </html>

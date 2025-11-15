@@ -13,7 +13,7 @@ from database import get_db, SessionLocal
 from models import *
 
 # Импортируем роутеры
-from routers import books, readers
+from routers import books, readers, loans
 
 app = FastAPI()
 app.add_middleware(GZipMiddleware, minimum_size=500)
@@ -22,6 +22,7 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 # Подключаем роутеры
 app.include_router(books.router)
 app.include_router(readers.router)
+app.include_router(loans.router)
 
 templates = Jinja2Templates(directory="templates")
 

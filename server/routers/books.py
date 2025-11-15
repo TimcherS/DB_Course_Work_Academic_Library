@@ -3,7 +3,7 @@ from sqlalchemy import func, and_
 from sqlalchemy.orm import Session
 
 from database import get_db
-from models import Book, BookItem, Author, AuthorBook, Publisher, Theme, BookLoan
+from models import *
 
 router = APIRouter(prefix="/api/books", tags=["books"])
 
@@ -253,3 +253,73 @@ async def delete_book(book_id: int, db: Session = Depends(get_db)):
         db.rollback()
         print(f"Error deleting book: {e}")
         raise HTTPException(status_code=500, detail=f"Ошибка при удалении книги: {str(e)}")
+
+
+
+
+# books.py - добавь этот endpoint
+@router.post("/{book_id}/loan")
+async def loan_book_to_reader(book_id: int, loan_data: dict, db: Session = Depends(get_db)):
+    try:
+        import datetime
+        
+        reader_fio = loan_data.get('reader_fio')
+        loan_due_date = loan_data.get('loan_due_date')
+        
+        if not reader_fio:
+            raise HTTPException(status_code=400, detail="ФИО читателя обязательно")
+        
+        if not loan_due_date:
+            raise HTTPException(status_code=400, detail="Дата возврата обязательна")
+        
+        # Преобразуем дату
+        try:
+            loan_due_date = datetime.datetime.strptime(loan_due_date, '%Y-%m-%d').date()
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Неверный формат даты. Используйте YYYY-MM-DD")
+        
+        # Проверяем существование читателя
+        reader = db.query(Reader).filter(Reader.fio == reader_fio).first()
+        if not reader:
+            raise HTTPException(status_code=404, detail="Читатель не найден")
+        
+        # Находим доступный экземпляр книги
+        book_item = db.query(BookItem)\
+                     .join(Book, BookItem.book_id == Book.book_id)\
+                     .filter(
+                         Book.book_id == book_id,
+                         BookItem.book_state == 'Доступна'
+                     )\
+                     .first()
+        
+        if not book_item:
+            raise HTTPException(status_code=400, detail="Нет доступных экземпляров этой книги")
+        
+        # Создаем запись о выдаче
+        loan = BookLoan(
+            loan_date=datetime.date.today(),
+            loan_due_date=loan_due_date,
+            book_item_id=book_item.book_item_id,
+            reader_id=reader.reader_id
+        )
+        
+        # Обновляем статус экземпляра
+        book_item.book_state = 'Займ'
+        
+        db.add(loan)
+        db.commit()
+        
+        return {
+            "message": f"Книга успешно выдана читателю {reader_fio}",
+            "loan_id": loan.loan_id,
+            "due_date": loan_due_date.isoformat()
+        }
+        
+    except HTTPException:
+        db.rollback()
+        raise
+    except Exception as e:
+        db.rollback()
+        print(f"Error loaning book: {e}")
+        raise HTTPException(status_code=500, detail=f"Ошибка при выдаче книги: {str(e)}")
+

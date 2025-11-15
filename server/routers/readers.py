@@ -1,8 +1,10 @@
+from datetime import datetime
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from database import get_db
-from models import Reader, BookLoan
+from models import *
 
 router = APIRouter(prefix="/api/readers", tags=["readers"])
 
@@ -139,3 +141,64 @@ async def delete_reader(reader_id: int, db: Session = Depends(get_db)):
         db.rollback()
         print(f"Error deleting reader: {e}")
         raise HTTPException(status_code=500, detail=f"Ошибка при удалении читателя: {str(e)}")
+
+
+
+
+# Добавьте этот endpoint в readers.py после существующих функций
+
+@router.get("/{reader_id}/loans")
+async def get_reader_loans(reader_id: int, db: Session = Depends(get_db)):
+    try:
+        # Проверяем существование читателя
+        reader = db.query(Reader).filter(Reader.reader_id == reader_id).first()
+        if not reader:
+            raise HTTPException(status_code=404, detail="Читатель не найден")
+        
+        # Получаем все займы читателя
+        loans = db.query(
+            BookLoan.loan_id,
+            BookLoan.loan_date,
+            BookLoan.loan_due_date,
+            BookLoan.loan_return_date,
+            BookLoan.book_item_id,
+            BookLoan.reader_id,
+            BookLoan.loan_return_date
+        ).filter(BookLoan.reader_id == reader_id).all()
+        
+        # Получаем информацию о книгах для каждого займа
+        loans_with_books = []
+        for loan in loans:
+            # Находим книгу через book_item
+            book_item = db.query(BookItem).filter(BookItem.book_item_id == loan.book_item_id).first()
+            if book_item:
+                book = db.query(Book).filter(Book.book_id == book_item.book_id).first()
+                if book:
+                    # Определяем статус займа
+                    status = "Возвращена" if loan.loan_return_date else "На руках"
+                    if loan.loan_return_date and loan.loan_return_date > loan.loan_due_date:
+                        status = "Возвращена с опозданием"
+                    elif not loan.loan_return_date and loan.loan_due_date < datetime.now().date():
+                        status = "Просрочена"
+                    
+                    loans_with_books.append({
+                        "loan_id": loan.loan_id,
+                        "book_name": book.book_name,
+                        "loan_date": loan.loan_date.isoformat() if loan.loan_date else None,
+                        "loan_due_date": loan.loan_due_date.isoformat() if loan.loan_due_date else None,
+                        "loan_return_date": loan.loan_return_date.isoformat() if loan.loan_return_date else None,
+                        "status": status,
+                        "book_item_id": loan.book_item_id
+                    })
+        
+        return {
+            "reader_id": reader_id,
+            "reader_fio": reader.fio,
+            "loans": loans_with_books
+        }
+        
+    except Exception as e:
+        print(f"Error getting reader loans: {e}")
+        raise HTTPException(status_code=500, detail=f"Ошибка при получении займов читателя: {str(e)}")
+
+

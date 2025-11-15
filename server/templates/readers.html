@@ -122,6 +122,53 @@
     </div>
 </div>
 
+<!-- Модальное окно редактирования читателя -->
+<div id="editReaderModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
+    <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+        <div class="mt-3">
+            <h3 class="text-lg font-medium text-gray-900 mb-4">Редактировать читателя</h3>
+            
+            <form id="editReaderForm" onsubmit="updateReader(event)">
+                <input type="hidden" id="edit_reader_id" name="reader_id">
+                <div class="mb-4">
+                    <label for="edit_fio" class="block text-sm font-medium text-gray-700 mb-1">
+                        ФИО *
+                    </label>
+                    <input type="text" id="edit_fio" name="fio" required
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+
+                <div class="mb-4">
+                    <label for="edit_dolzhnost" class="block text-sm font-medium text-gray-700 mb-1">
+                        Должность
+                    </label>
+                    <input type="text" id="edit_dolzhnost" name="dolzhnost"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+
+                <div class="mb-4">
+                    <label for="edit_uchenaya_stepen" class="block text-sm font-medium text-gray-700 mb-1">
+                        Учёная степень
+                    </label>
+                    <input type="text" id="edit_uchenaya_stepen" name="uchenaya_stepen"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+
+                <div class="flex items-center justify-end gap-3 mt-6">
+                    <button type="button" onclick="closeEditReaderModal()" 
+                            class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500">
+                        Отмена
+                    </button>
+                    <button type="submit" 
+                            class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        Сохранить изменения
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <!-- Контекстное меню -->
 <div id="contextMenu" class="mai-context-menu">
     <button onclick="editReader()">Редактировать</button>

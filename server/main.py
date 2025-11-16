@@ -68,6 +68,14 @@ async def books_route(request: Request, search: str = "", db = Depends(get_db)):
          .group_by(BookItem.book_id)\
          .subquery()
         
+        # Подзапрос для получения авторов книги
+        authors_subquery = db.query(
+            AuthorBook.book_id,
+            func.string_agg(Author.author_name, ', ').label('authors_list')
+        ).join(Author, AuthorBook.author_id == Author.author_id)\
+         .group_by(AuthorBook.book_id)\
+         .subquery()
+        
         # Основной запрос для получения книг с OUTER JOIN
         query = db.query(
             Book.book_id,
@@ -76,10 +84,12 @@ async def books_route(request: Request, search: str = "", db = Depends(get_db)):
             Publisher.publisher_name,
             Book.release_date,
             Book.isbn,
-            func.coalesce(available_count_subquery.c.available_count, 0).label('available_book_count')
+            func.coalesce(available_count_subquery.c.available_count, 0).label('available_book_count'),
+            func.coalesce(authors_subquery.c.authors_list, 'Не указаны').label('authors')
         ).outerjoin(Publisher, Book.publisher_id == Publisher.publisher_id)\
          .outerjoin(Theme, Book.theme_id == Theme.theme_id)\
          .outerjoin(available_count_subquery, Book.book_id == available_count_subquery.c.book_id)\
+         .outerjoin(authors_subquery, Book.book_id == authors_subquery.c.book_id)\
          .filter(Book.book_name.ilike(search_param))
         
         values = query.all()
@@ -89,6 +99,7 @@ async def books_route(request: Request, search: str = "", db = Depends(get_db)):
             books.append({
                 "id": row.book_id,
                 "name": row.book_name,
+                "authors": row.authors,
                 "theme": row.theme_name or "Не указана",
                 "publisher": row.publisher_name or "Не указан",
                 "release_date": row.release_date or "Не указана",

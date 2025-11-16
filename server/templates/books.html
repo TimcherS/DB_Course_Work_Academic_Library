@@ -12,76 +12,182 @@
 {% include 'header.html' %}
 
 <div class="min-h-screen">
-    <div class="border-custom rounded-table mx-20 mt-4">
-        <!-- UPHEADER -->
-        <div class="p-4 flex items-center justify-between border-b border-custom mai-transition">
-            <!-- Add book button -->
-            <div>
-                <button type="button" onclick="openAddBookModal()" class="mai-btn inline-flex items-center">
-                    Зарегистрировать книгу
-                </button>
-            </div>
-            <!-- Search form -->
-            <div class="relative">
-                <div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
-                    <svg class="w-4 h-4 text-gray-500" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 20">
-                        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m19 19-4-4m0-7A7 7 0 1 1 1 8a7 7 0 0 1 14 0Z"/>
-                    </svg>
+    <div class="flex mx-20 mt-4 gap-4">
+        <!-- Левое меню фильтров -->
+        <div class="w-64 flex-shrink-0">
+            <div class="border-custom rounded-table bg-white p-4">
+                <!-- Фильтр по году выпуска -->
+                <div class="mb-6">
+                    <h4 class="text-sm font-bold text-gray-900 mb-3">Год выпуска</h4>
+                    <div class="space-y-4">
+                        <!-- Два поля ввода года на одной линии -->
+                        <div class="flex items-center gap-2">
+                            <div class="flex-1">
+                                <label class="text-xs text-gray-500 mb-1 block">От</label>
+                                <input type="number" id="minYearInput" min="1900" max="2030" value="1900"
+                                    class="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-mai-blue focus:border-mai-blue">
+                            </div>
+                            <div class="flex-1">
+                                <label class="text-xs text-gray-500 mb-1 block">До</label>
+                                <input type="number" id="maxYearInput" min="1900" max="2030" value="2030"
+                                    class="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-mai-blue focus:border-mai-blue">
+                            </div>
+                        </div>
+                        
+                        <!-- Радиокнопки для сортировки -->
+                        <div class="space-y-2 pt-2 border-t border-gray-200">
+                            <div class="flex items-center">
+                                <input type="radio" id="sortNone" name="yearSort" value="none" checked
+                                    class="w-4 h-4 text-mai-blue border-gray-300 focus:ring-mai-blue">
+                                <label for="sortNone" class="ml-2 text-sm text-gray-700">Без сортировки</label>
+                            </div>
+                            <div class="flex items-center">
+                                <input type="radio" id="sortAsc" name="yearSort" value="asc"
+                                    class="w-4 h-4 text-mai-blue border-gray-300 focus:ring-mai-blue">
+                                <label for="sortAsc" class="ml-2 text-sm text-gray-700">Сначала старые</label>
+                            </div>
+                            <div class="flex items-center">
+                                <input type="radio" id="sortDesc" name="yearSort" value="desc"
+                                    class="w-4 h-4 text-mai-blue border-gray-300 focus:ring-mai-blue">
+                                <label for="sortDesc" class="ml-2 text-sm text-gray-700">Сначала новые</label>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <form action="/books" method="get">
-                    <input id="searchInput" name="search" type="text" value="{{ search }}" class="block py-1.5 ps-10 text-sm border border-gray-300 rounded-lg w-80 bg-gray-50" placeholder="Поиск книг">
-                </form>
+
+                <!-- Фильтр по темам -->
+                <div class="mb-6">
+                    <h4 class="text-sm font-bold text-gray-900 mb-3">Тематика</h4>
+                    <div class="space-y-2 max-h-60 overflow-y-auto">
+                        {% set themes = [] %}
+                        {% for book in books %}
+                            {% if book.theme and book.theme not in themes and book.theme != "Не указана" %}
+                                {% set _ = themes.append(book.theme) %}
+                            {% endif %}
+                        {% endfor %}
+                        
+                        {% for theme in themes|sort %}
+                        <div class="flex items-center">
+                            <input type="checkbox" id="theme-{{ loop.index }}" value="{{ theme }}" 
+                                class="theme-checkbox w-4 h-4 text-blue-600 rounded focus:ring-blue-500">
+                            <label for="theme-{{ loop.index }}" class="ml-2 text-sm text-gray-700">{{ theme }}</label>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Фильтр по статусу -->
+                <div class="mb-6">
+                    <h4 class="text-sm font-bold text-gray-900 mb-3">Статус</h4>
+                    <div class="space-y-2">
+                        <div class="flex items-center">
+                            <input type="checkbox" id="status-available" value="available" 
+                                class="status-checkbox w-4 h-4 text-blue-600 rounded focus:ring-blue-500" checked>
+                            <label for="status-available" class="ml-2 text-sm text-gray-700">Доступны</label>
+                        </div>
+                        <div class="flex items-center">
+                            <input type="checkbox" id="status-warning" value="warning" 
+                                class="status-checkbox w-4 h-4 text-blue-600 rounded focus:ring-blue-500" checked>
+                            <label for="status-warning" class="ml-2 text-sm text-gray-700">Мало экземпляров</label>
+                        </div>
+                        <div class="flex items-center">
+                            <input type="checkbox" id="status-unavailable" value="unavailable" 
+                                class="status-checkbox w-4 h-4 text-blue-600 rounded focus:ring-blue-500" checked>
+                            <label for="status-unavailable" class="ml-2 text-sm text-gray-700">Нет в наличии</label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Кнопки управления фильтрами -->
+                <div class="space-y-2">
+                    <button id="applyFilters" class="w-full mai-btn hover:bg-gray-800 font-medium">
+                        Применить
+                    </button>
+                    <button id="resetFilters" class="w-full mai-btn bg-gray-200 hover:bg-gray-300 text-gray-700">
+                        Сбросить
+                    </button>
+                </div>
             </div>
         </div>
+        <!-- Основной контент с таблицей -->
+        <div class="flex-1">
+            <div class="border-custom rounded-table">
+                <!-- UPHEADER -->
+                <div class="p-4 flex items-center justify-between border-b border-custom mai-transition">
+                    <!-- Add book button -->
+                    <div>
+                        <button type="button" onclick="openAddBookModal()" class="mai-btn inline-flex items-center">
+                            Зарегистрировать книгу
+                        </button>
+                    </div>
+                    <!-- Search form -->
+                    <div class="relative">
+                        <div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
+                            <svg class="w-4 h-4 text-gray-500" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 20">
+                                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m19 19-4-4m0-7A7 7 0 1 1 1 8a7 7 0 0 1 14 0Z"/>
+                            </svg>
+                        </div>
+                        <form action="/books" method="get">
+                            <input id="searchInput" name="search" type="text" value="{{ search }}" class="block py-1.5 ps-10 text-sm border border-gray-300 rounded-lg w-80 bg-gray-50" placeholder="Поиск книг">
+                        </form>
+                    </div>
+                </div>
 
-        <!-- Books table -->
-        <table class="w-full">
-            <!-- table header -->
-            <thead>
-                <tr class="mai-table-header border-custom">
-                    <th class="px-6 py-4 border-custom">№</th>
-                    <th class="px-6 py-4 border-custom">Название</th>
-                    <th class="px-6 py-4 border-custom">Тема</th>
-                    <th class="px-6 py-4 border-custom">Издатель</th>
-                    <th class="px-6 py-4 border-custom">Дата выпуска</th>
-                    <th class="px-6 py-4 border-custom">ISBN</th>
-                    <th class="px-6 py-4 border-custom">Статус</th>
-                </tr>
-            </thead>
-            <!-- table rows -->
-            <tbody id="book_rows">
-                {% for book in books %}
-                <tr class="mai-table-row context-menu-trigger border-custom"
-                    data-book-id="{{ book.id }}" 
-                    data-book-name="{{ book.name }}">
-                    <td class="px-6 py-4 border-custom text-center">{{ loop.index }}</td>
-                    <td class="px-6 py-4 border-custom">{{ book.name }}</td>
-                    <td class="px-6 py-4 border-custom">{{ book.theme }}</td>
-                    <td class="px-6 py-4 border-custom">{{ book.publisher }}</td>
-                    <td class="px-6 py-4 border-custom">{{ book.release_date }}</td>
-                    <td class="px-6 py-4 border-custom">{{ book.isbn }}</td>
-                    <td class="px-6 py-4 border-custom">
-                        {% if book.available_book_count > 10 %}
-                        <div class="flex items-center">
-                            <div class="mai-status-dot mai-status-dot-available"></div>
-                            <span class="mai-status-available">Доступны ({{ book.available_book_count }}шт.)</span>
-                        </div>
-                        {% elif book.available_book_count > 0 %}
-                        <div class="flex items-center">
-                            <div class="mai-status-dot mai-status-dot-warning"></div>
-                            <span class="mai-status-warning">Доступны ({{ book.available_book_count }}шт.)</span>
-                        </div>
-                        {% else %}
-                        <div class="flex items-center">
-                            <div class="mai-status-dot mai-status-dot-unavailable"></div>
-                            <span class="mai-status-unavailable">Нет в наличии</span>
-                        </div>
-                        {% endif %}
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+                <!-- Books table -->
+                <table class="w-full">
+                    <!-- table header -->
+                    <thead>
+                        <tr class="mai-table-header border-custom">
+                            <th class="px-6 py-4 border-custom">№</th>
+                            <th class="px-6 py-4 border-custom">Название</th>
+                            <th class="px-6 py-4 border-custom">Авторы</th>
+                            <th class="px-6 py-4 border-custom">Тема</th>
+                            <th class="px-6 py-4 border-custom">Издатель</th>
+                            <th class="px-6 py-4 border-custom">Дата выпуска</th>
+                            <th class="px-6 py-4 border-custom">ISBN</th>
+                            <th class="px-6 py-4 border-custom">Статус</th>
+                        </tr>
+                    </thead>
+                    <!-- table rows -->
+                    <tbody id="booksTableBody">
+                        {% for book in books %}
+                        <tr class="mai-table-row context-menu-trigger border-custom book-row"
+                            data-book-id="{{ book.id }}" 
+                            data-book-name="{{ book.name }}"
+                            data-theme="{{ book.theme }}"
+                            data-release-year="{{ book.release_date }}"
+                            data-status="{% if book.available_book_count > 10 %}available{% elif book.available_book_count > 0 %}warning{% else %}unavailable{% endif %}">
+                            <td class="px-6 py-4 border-custom text-center">{{ loop.index }}</td>
+                            <td class="px-6 py-4 border-custom">{{ book.name }}</td>
+                            <td class="px-6 py-4 border-custom">{{ book.authors or "Не указаны" }}</td>
+                            <td class="px-6 py-4 border-custom">{{ book.theme }}</td>
+                            <td class="px-6 py-4 border-custom">{{ book.publisher }}</td>
+                            <td class="px-6 py-4 border-custom">{{ book.release_date }}</td>
+                            <td class="px-6 py-4 border-custom">{{ book.isbn }}</td>
+                            <td class="px-6 py-4 border-custom">
+                                {% if book.available_book_count > 10 %}
+                                <div class="flex items-center">
+                                    <div class="mai-status-dot mai-status-dot-available"></div>
+                                    <span class="mai-status-available">Доступны ({{ book.available_book_count }}шт.)</span>
+                                </div>
+                                {% elif book.available_book_count > 0 %}
+                                <div class="flex items-center">
+                                    <div class="mai-status-dot mai-status-dot-warning"></div>
+                                    <span class="mai-status-warning">Мало экземпляров ({{ book.available_book_count }}шт.)</span>
+                                </div>
+                                {% else %}
+                                <div class="flex items-center">
+                                    <div class="mai-status-dot mai-status-dot-unavailable"></div>
+                                    <span class="mai-status-unavailable">Нет в наличии</span>
+                                </div>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -174,6 +280,7 @@
 <script src="static/js/context-menu.js"></script>
 <script src="static/js/books.js"></script>
 <script src="static/js/search.js"></script>
+<script src="static/js/filters.js"></script>
 {% include 'footer.html' %}
 </body>
 </html>

@@ -366,3 +366,82 @@ p {
     transform: translateY(-5px);
     box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
 }
+
+
+
+
+
+/* Стили для синих ползунков МАИ */
+.slider-mai::-webkit-slider-thumb {
+    appearance: none;
+    height: 18px;
+    width: 18px;
+    border-radius: 50%;
+    background: #377dff;
+    cursor: pointer;
+    border: 2px solid #ffffff;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.slider-mai::-moz-range-thumb {
+    height: 18px;
+    width: 18px;
+    border-radius: 50%;
+    background: #377dff;
+    cursor: pointer;
+    border: 2px solid #ffffff;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.slider-mai::-webkit-slider-track {
+    height: 6px;
+    background: #e5e7eb;
+    border-radius: 3px;
+}
+
+.slider-mai::-moz-range-track {
+    height: 6px;
+    background: #e5e7eb;
+    border-radius: 3px;
+    border: none;
+}
+
+.slider-mai::-webkit-slider-runnable-track {
+    height: 6px;
+    background: #e5e7eb;
+    border-radius: 3px;
+}
+
+/* Синий цвет для активного состояния ползунков */
+.slider-mai:focus::-webkit-slider-thumb {
+    border-color: #377dff;
+    box-shadow: 0 0 0 3px rgba(0, 57, 166, 0.1);
+}
+
+.slider-mai:focus::-moz-range-thumb {
+    border-color: #377dff;
+    box-shadow: 0 0 0 3px rgba(0, 57, 166, 0.1);
+}
+
+/* Синий цвет МАИ для кнопок и элементов */
+#applyFilters  {
+    background-color: #377dff;
+    color: white;
+    transition: filter 0.1s;
+}
+
+#applyFilters:hover  {
+    filter: brightness(110%);
+}
+
+.text-mai-blue {
+    color: #377dff;
+}
+
+.border-mai-blue {
+    border-color: #377dff;
+}
+
+.focus\:ring-mai-blue:focus {
+    --tw-ring-color: var(--mai-accent);
+}

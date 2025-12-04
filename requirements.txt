@@ -1,0 +1,10 @@
+fastapi[standard]
+Jinja2
+asyncpg
+python-dotenv
+SQLAlchemy
+psycopg2-binary
+
+annotated-doc
+annotated-types
+anyio
